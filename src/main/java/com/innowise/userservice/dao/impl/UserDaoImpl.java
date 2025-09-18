@@ -109,7 +109,6 @@ public class UserDaoImpl implements UserDao {
     }
 
     @Override
-    @Transactional
     public void deleteUserById(UUID id) {
         String deleteUser = "delete from users where id = ?";
         jdbcTemplate.update(deleteUser, id);
