@@ -1,0 +1,19 @@
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="2025-09-18-add-fk-cardinfo-userid-on-delete-cascade-2" author="Pavel Kazachenko">
+    <dropForeignKeyConstraint baseTableName="card_info" constraintName="fk_card_user"/>
+
+    <addForeignKeyConstraint
+      baseTableName="card_info"
+      baseColumnNames="user_id"
+      referencedTableName="users"
+      referencedColumnNames="id"
+      constraintName="fk_card_user"
+      onDelete="CASCADE"/>
+  </changeSet>
+
+</databaseChangeLog>
