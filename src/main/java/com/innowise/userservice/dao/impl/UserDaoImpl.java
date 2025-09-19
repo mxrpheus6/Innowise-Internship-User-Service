@@ -3,39 +3,57 @@ package com.innowise.userservice.dao.impl;
 import com.innowise.userservice.dao.UserDao;
 import com.innowise.userservice.model.User;
 import java.sql.Date;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 @RequiredArgsConstructor
 public class UserDaoImpl implements UserDao {
 
+    private static final class SQL {
+        static final String GET_ALL = "select * from users";
+        static final String GET_BY_ID = "select * from users where id = ?";
+        static final String GET_BY_IDS = "select * from users where id in (%s)";
+        static final String GET_BY_EMAIL = "select * from users where email = ?";
+
+        static final String CREATE_USER = """
+            insert into users (name, surname, birth_date, email)
+            values (?, ?, ?, ?)
+            returning id
+            """;
+
+        static final String UPDATE_USER = """
+            update users
+            set name = ?,
+                surname = ?,
+                birth_date = ?,
+                email = ?
+            where id = ?
+            """;
+
+        static final String DELETE_USER = "delete from users where id = ?";
+    }
+
     private final JdbcTemplate jdbcTemplate;
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Override
     public List<User> getAll() {
-        String sql = "select * from users";
-
-        return jdbcTemplate.query(sql, ROW_MAPPER);
+        return jdbcTemplate.query(SQL.GET_ALL, ROW_MAPPER);
     }
 
     @Override
     public Optional<User> getUserById(UUID id) {
         User user = null;
-        String sql = "select * from users where id = ?";
 
         try {
-            user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
+            user = jdbcTemplate.queryForObject(SQL.GET_BY_ID, ROW_MAPPER, id);
         } catch (DataAccessException e) {
             return Optional.empty();
         }
@@ -49,20 +67,18 @@ public class UserDaoImpl implements UserDao {
             return List.of();
         }
 
-        String sql = "select * from users where id in (:ids)";
-        Map<String, Object> params = Map.of("ids", ids);
+        String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
+        String sql = String.format(SQL.GET_BY_IDS, placeholders);
 
-        return namedParameterJdbcTemplate.query(sql, params, ROW_MAPPER);
+        return jdbcTemplate.query(sql, ROW_MAPPER, ids.toArray());
     }
 
     @Override
     public Optional<User> getUserByEmail(String email) {
         User user = null;
 
-        String sql = "select * from users where email = ?";
-
         try {
-            user = jdbcTemplate.queryForObject(sql, ROW_MAPPER, email);
+            user = jdbcTemplate.queryForObject(SQL.GET_BY_EMAIL, ROW_MAPPER, email);
         } catch (DataAccessException e) {
             return Optional.empty();
         }
@@ -72,10 +88,8 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public User createUser(User user) {
-        String sql = "insert into users (name, surname, birth_date, email) values (?, ?, ?, ?) RETURNING id";
-
         UUID id = jdbcTemplate.queryForObject(
-                sql,
+                SQL.CREATE_USER,
                 UUID.class,
                 user.getName(),
                 user.getSurname(),
@@ -89,10 +103,8 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public User updateUserById(UUID id, User user) {
-        String sql = "update users set name = ?, surname = ?, birth_date = ?, email = ? where id = ?";
-
         int updatedRows = jdbcTemplate.update(
-                sql,
+                SQL.UPDATE_USER,
                 user.getName(),
                 user.getSurname(),
                 user.getBirthDate(),
@@ -110,7 +122,6 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public void deleteUserById(UUID id) {
-        String deleteUser = "delete from users where id = ?";
-        jdbcTemplate.update(deleteUser, id);
+        jdbcTemplate.update(SQL.DELETE_USER, id);
     }
 }

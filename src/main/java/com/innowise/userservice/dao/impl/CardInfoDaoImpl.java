@@ -2,38 +2,56 @@ package com.innowise.userservice.dao.impl;
 
 import com.innowise.userservice.dao.CardInfoDao;
 import com.innowise.userservice.model.CardInfo;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
 public class CardInfoDaoImpl implements CardInfoDao {
 
+    private static final class SQL {
+        static final String GET_ALL = "select * from card_info";
+        static final String GET_BY_ID = "select * from card_info where id = ?";
+        static final String GET_BY_IDS = "select * from card_info where id in (:ids)";
+
+        static final String CREATE_CARD_INFO = """
+            insert into card_info (number, holder, expiration_date, user_id)
+            values (?, ?, ?, ?)
+            returning id
+            """;
+
+        static final String UPDATE_CARD_INFO = """
+            update card_info
+            set number = ?,
+                holder = ?,
+                expiration_date = ?,
+                user_id = ?
+            where id = ?
+            """;
+
+        static final String DELETE_CARD_INFO = "delete from card_info where id = ?";
+    }
+
     private final JdbcTemplate jdbcTemplate;
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Override
-    public List<CardInfo> getAll() {
-        String sql = "select * from card_info";
-
-        return jdbcTemplate.query(sql, ROW_MAPPER);
+    public List<CardInfo> getAll() {;
+        return jdbcTemplate.query(SQL.GET_ALL, ROW_MAPPER);
     }
 
     @Override
     public Optional<CardInfo> getCardInfoById(UUID id) {
         CardInfo cardInfo = null;
-        String sql = "select * from card_info where id = ?";
 
         try {
-            cardInfo = jdbcTemplate.queryForObject(sql, ROW_MAPPER, id);
+            cardInfo = jdbcTemplate.queryForObject(SQL.GET_BY_ID, ROW_MAPPER, id);
         } catch (DataAccessException e) {
             return Optional.empty();
         }
@@ -47,18 +65,16 @@ public class CardInfoDaoImpl implements CardInfoDao {
             return List.of();
         }
 
-        String sql = "select * from card_info where id in (:ids)";
-        Map<String, Object> params = Map.of("ids", ids);
+        String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
+        String sql = String.format(SQL.GET_BY_IDS, placeholders);
 
-        return namedParameterJdbcTemplate.query(sql, params, ROW_MAPPER);
+        return jdbcTemplate.query(sql, ROW_MAPPER, ids.toArray());
     }
 
     @Override
     public CardInfo createCardInfo(CardInfo cardInfo) {
-        String sql = "insert into card_info (number, holder, expiration_date, user_id) values (?, ?, ?, ?) RETURNING id";
-
         UUID id = jdbcTemplate.queryForObject(
-                sql,
+                SQL.CREATE_CARD_INFO,
                 UUID.class,
                 cardInfo.getNumber(),
                 cardInfo.getHolder(),
@@ -72,14 +88,13 @@ public class CardInfoDaoImpl implements CardInfoDao {
 
     @Override
     public CardInfo updateCardInfoById(UUID id, CardInfo cardInfo) {
-        String sql = "update card_info set number = ?, holder = ?, expiration_date = ?, user_id = ? where id = ?";
-
         int updatedRows = jdbcTemplate.update(
-                sql,
+                SQL.UPDATE_CARD_INFO,
                 cardInfo.getNumber(),
                 cardInfo.getHolder(),
                 cardInfo.getExpirationDate(),
-                cardInfo.getUserId()
+                cardInfo.getUserId(),
+                id
         );
 
         if (updatedRows == 0) {
@@ -92,7 +107,6 @@ public class CardInfoDaoImpl implements CardInfoDao {
 
     @Override
     public void deleteCardInfoById(UUID id) {
-        String sql = "delete from card_info where id = ?";
-        jdbcTemplate.update(sql, id);
+        jdbcTemplate.update(SQL.DELETE_CARD_INFO, id);
     }
 }
