@@ -1,0 +1,55 @@
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="2025-09-18-convert-users-and-cardinfo-id-to-uuid-1" author="Pavel Kazachenko">
+    <addColumn tableName="users">
+      <column name="new_id" type="UUID" defaultValueComputed="gen_random_uuid()">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+
+    <addColumn tableName="card_info">
+      <column name="new_id" type="UUID" defaultValueComputed="gen_random_uuid()">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+
+    <addColumn tableName="card_info">
+      <column name="new_user_id" type="UUID"/>
+    </addColumn>
+
+    <sql>
+      UPDATE card_info c
+      SET new_user_id = u.new_id
+      FROM users u
+      WHERE c.user_id = u.id;
+    </sql>
+
+    <dropForeignKeyConstraint baseTableName="card_info" constraintName="fk_card_user"/>
+
+    <dropColumn tableName="card_info" columnName="user_id"/>
+    <renameColumn tableName="card_info" oldColumnName="new_user_id" newColumnName="user_id"/>
+
+    <dropPrimaryKey tableName="users"/>
+    <addPrimaryKey tableName="users" columnNames="new_id" constraintName="users_pkey"/>
+
+    <dropPrimaryKey tableName="card_info"/>
+    <addPrimaryKey tableName="card_info" columnNames="new_id" constraintName="card_info_pkey"/>
+
+    <dropColumn tableName="users" columnName="id"/>
+    <renameColumn tableName="users" oldColumnName="new_id" newColumnName="id"/>
+
+    <dropColumn tableName="card_info" columnName="id"/>
+    <renameColumn tableName="card_info" oldColumnName="new_id" newColumnName="id"/>
+
+    <addForeignKeyConstraint baseTableName="card_info"
+      baseColumnNames="user_id"
+      referencedTableName="users"
+      referencedColumnNames="id"
+      constraintName="fk_card_user"/>
+  </changeSet>
+
+</databaseChangeLog>
