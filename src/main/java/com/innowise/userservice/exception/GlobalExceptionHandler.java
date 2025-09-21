@@ -53,4 +53,11 @@ public class GlobalExceptionHandler {
                 .body(new ExceptionDto(LocalDateTime.now(), e.getMessage()));
     }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ExceptionDto> handleException(Exception e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ExceptionDto(LocalDateTime.now(), e.getMessage()));
+    }
+
 }
