@@ -4,6 +4,7 @@ import com.innowise.userservice.dao.CardInfoDao;
 import com.innowise.userservice.dto.request.CardInfoRequest;
 import com.innowise.userservice.dto.response.CardInfoResponse;
 import com.innowise.userservice.exception.CardInfoNotFoundException;
+import com.innowise.userservice.exception.ExceptionMessages;
 import com.innowise.userservice.mapper.CardInfoMapper;
 import com.innowise.userservice.model.CardInfo;
 import com.innowise.userservice.service.CardInfoService;
@@ -30,7 +31,7 @@ public class CardInfoServiceImpl implements CardInfoService {
     @Override
     public CardInfoResponse getCardInfoById(UUID id) {
         CardInfo cardInfo = cardInfoDao.getCardInfoById(id)
-                .orElseThrow(() -> new CardInfoNotFoundException("Card info with provided id not found"));
+                .orElseThrow(() -> new CardInfoNotFoundException(ExceptionMessages.CARD_NOT_FOUND));
 
         return cardInfoMapper.toResponse(cardInfo);
     }
