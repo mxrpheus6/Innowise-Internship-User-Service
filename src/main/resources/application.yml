@@ -14,6 +14,14 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/app-changelog.xml
 
+  cache:
+    type: redis
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6380}
+
 logging:
   level:
     liquibase: DEBUG

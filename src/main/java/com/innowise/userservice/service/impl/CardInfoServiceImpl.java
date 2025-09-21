@@ -11,6 +11,9 @@ import com.innowise.userservice.service.CardInfoService;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +32,7 @@ public class CardInfoServiceImpl implements CardInfoService {
     }
 
     @Override
+    @Cacheable(value = "card_info", key = "#id")
     public CardInfoResponse getCardInfoById(UUID id) {
         CardInfo cardInfo = cardInfoDao.getCardInfoById(id)
                 .orElseThrow(() -> new CardInfoNotFoundException(ExceptionMessages.CARD_NOT_FOUND));
@@ -44,6 +48,7 @@ public class CardInfoServiceImpl implements CardInfoService {
     }
 
     @Override
+    @CachePut(value = "card_info", key = "#result.id")
     public CardInfoResponse createCardInfo(CardInfoRequest cardInfoRequest) {
         CardInfo cardInfo = cardInfoMapper.toEntity(cardInfoRequest);
 
@@ -54,6 +59,7 @@ public class CardInfoServiceImpl implements CardInfoService {
 
     @Override
     @Transactional
+    @CachePut(value = "card_info", key = "#id")
     public CardInfoResponse updateCardInfoById(UUID id, CardInfoRequest cardInfoRequest) {
         CardInfo cardInfo = cardInfoMapper.toEntity(cardInfoRequest);
 
@@ -64,6 +70,7 @@ public class CardInfoServiceImpl implements CardInfoService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "card_info", key = "#id")
     public void deleteCardInfoById(UUID id) {
         cardInfoDao.deleteCardInfoById(id);
     }

@@ -11,6 +11,9 @@ import com.innowise.userservice.service.UserService;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +32,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(value = "user", key = "#id")
     public UserResponse getUserById(UUID id) {
         User user = userDao.getUserById(id)
                 .orElseThrow(() -> new UserNotFoundException(ExceptionMessages.USER_NOT_FOUND));
@@ -37,6 +41,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(value = "user", key = "#email")
     public UserResponse getUserByEmail(String email) {
         User user = userDao.getUserByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(ExceptionMessages.USER_NOT_FOUND));
@@ -52,6 +57,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CachePut(value = "user", key = "#result.id")
     public UserResponse createUser(UserRequest userRequest) {
         User user = userMapper.toEntity(userRequest);
 
@@ -62,6 +68,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CachePut(value = "user", key = "#id")
     public UserResponse updateUserById(UUID id, UserRequest userRequest) {
         User user = userMapper.toEntity(userRequest);
 
@@ -72,6 +79,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "user", key = "#id")
     public void deleteUserById(UUID id) {
         userDao.deleteUserById(id);
     }

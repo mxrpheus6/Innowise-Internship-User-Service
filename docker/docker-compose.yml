@@ -13,6 +13,14 @@ services:
       - "5433:5432"
     volumes:
       - users_data:/var/lib/postgresql/data
+  redis:
+    image: redis:7.4
+    container_name: users_redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
 
 volumes:
   users_data:
+  redis_data:

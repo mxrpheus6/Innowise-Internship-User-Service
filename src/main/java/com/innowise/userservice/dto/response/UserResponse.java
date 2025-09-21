@@ -2,11 +2,19 @@ package com.innowise.userservice.dto.response;
 
 import java.time.LocalDate;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-public record UserResponse(
-        UUID id,
-        String name,
-        String surname,
-        LocalDate birthDate,
-        String email
-) {}
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+public class UserResponse {
+    private UUID id;
+    private String name;
+    private String surname;
+    private LocalDate birthDate;
+    private String email;
+}
