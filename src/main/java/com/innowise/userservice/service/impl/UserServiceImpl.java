@@ -3,6 +3,7 @@ package com.innowise.userservice.service.impl;
 import com.innowise.userservice.dao.UserDao;
 import com.innowise.userservice.dto.request.UserRequest;
 import com.innowise.userservice.dto.response.UserResponse;
+import com.innowise.userservice.exception.ExceptionMessages;
 import com.innowise.userservice.exception.UserNotFoundException;
 import com.innowise.userservice.mapper.UserMapper;
 import com.innowise.userservice.model.User;
@@ -30,7 +31,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getUserById(UUID id) {
         User user = userDao.getUserById(id)
-                .orElseThrow(() -> new UserNotFoundException("User with provided id not found"));
+                .orElseThrow(() -> new UserNotFoundException(ExceptionMessages.USER_NOT_FOUND));
 
         return userMapper.toResponse(user);
     }
@@ -38,7 +39,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getUserByEmail(String email) {
         User user = userDao.getUserByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User with provided email not found"));
+                .orElseThrow(() -> new UserNotFoundException(ExceptionMessages.USER_NOT_FOUND));
 
         return userMapper.toResponse(user);
     }
