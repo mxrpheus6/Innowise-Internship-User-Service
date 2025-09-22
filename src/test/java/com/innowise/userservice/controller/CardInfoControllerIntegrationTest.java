@@ -1,5 +1,7 @@
 package com.innowise.userservice.controller;
 
+import static com.innowise.userservice.constants.CommonConstants.CARD_INFOS_URL;
+import static com.innowise.userservice.constants.CommonConstants.USERS_URL;
 import static com.innowise.userservice.constants.UserTestConstants.BIRTH_DATE;
 import static com.innowise.userservice.constants.UserTestConstants.EMAIL;
 import static com.innowise.userservice.constants.UserTestConstants.SURNAME;
@@ -62,9 +64,6 @@ public class CardInfoControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private static final String CARD_URL = "/api/v1/card-infos";
-    private static final String USER_URL = "/api/v1/users";
-
     private UserResponse createTestUser() throws Exception {
         UserRequest userRequest = new UserRequest(
                 NAME,
@@ -76,7 +75,7 @@ public class CardInfoControllerIntegrationTest {
 
         String userJson = objectMapper.writeValueAsString(userRequest);
 
-        String responseJson = mockMvc.perform(post(USER_URL)
+        String responseJson = mockMvc.perform(post(USERS_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(userJson))
                 .andExpect(status().isCreated())
@@ -102,7 +101,7 @@ public class CardInfoControllerIntegrationTest {
 
         CardInfoRequest cardRequest = buildCardRequest(user.getId(), CardInfoTestConstants.VALID_CARD_INFO_REQUEST);
 
-        String responseJson = mockMvc.perform(post(CARD_URL)
+        String responseJson = mockMvc.perform(post(CARD_INFOS_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(cardRequest)))
                 .andExpect(status().isCreated())
@@ -114,7 +113,7 @@ public class CardInfoControllerIntegrationTest {
 
         assertThat(created.getNumber()).isEqualTo(CardInfoTestConstants.CARD_NUMBER);
 
-        String fetchedJson = mockMvc.perform(get(CARD_URL + "/" + created.getId()))
+        String fetchedJson = mockMvc.perform(get(CARD_INFOS_URL + "/" + created.getId()))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -133,7 +132,7 @@ public class CardInfoControllerIntegrationTest {
         CardInfoRequest cardRequest = buildCardRequest(user.getId(), CardInfoTestConstants.VALID_CARD_INFO_REQUEST);
 
         CardInfoResponse created = objectMapper.readValue(
-                mockMvc.perform(post(CARD_URL)
+                mockMvc.perform(post(CARD_INFOS_URL)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(cardRequest)))
                         .andExpect(status().isCreated())
@@ -144,7 +143,7 @@ public class CardInfoControllerIntegrationTest {
         CardInfoRequest updatedRequest = buildCardRequest(user.getId(), CardInfoTestConstants.UPDATED_CARD_INFO_REQUEST);
 
         CardInfoResponse updated = objectMapper.readValue(
-                mockMvc.perform(put(CARD_URL + "/" + created.getId())
+                mockMvc.perform(put(CARD_INFOS_URL + "/" + created.getId())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(updatedRequest)))
                         .andExpect(status().isOk())
@@ -162,17 +161,17 @@ public class CardInfoControllerIntegrationTest {
         CardInfoRequest cardRequest = buildCardRequest(user.getId(), CardInfoTestConstants.VALID_CARD_INFO_REQUEST);
 
         CardInfoResponse created = objectMapper.readValue(
-                mockMvc.perform(post(CARD_URL)
+                mockMvc.perform(post(CARD_INFOS_URL)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(cardRequest)))
                         .andReturn().getResponse().getContentAsString(),
                 CardInfoResponse.class
         );
 
-        mockMvc.perform(delete(CARD_URL + "/" + created.getId()))
+        mockMvc.perform(delete(CARD_INFOS_URL + "/" + created.getId()))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get(CARD_URL + "/" + created.getId()))
+        mockMvc.perform(get(CARD_INFOS_URL + "/" + created.getId()))
                 .andExpect(status().isNotFound());
     }
 
@@ -181,7 +180,7 @@ public class CardInfoControllerIntegrationTest {
         UserResponse user = createTestUser();
 
         CardInfoResponse card1 = objectMapper.readValue(
-                mockMvc.perform(post(CARD_URL)
+                mockMvc.perform(post(CARD_INFOS_URL)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(buildCardRequest(user.getId(), CardInfoTestConstants.VALID_CARD_INFO_REQUEST))))
                         .andReturn().getResponse().getContentAsString(),
@@ -189,7 +188,7 @@ public class CardInfoControllerIntegrationTest {
         );
 
         CardInfoResponse card2 = objectMapper.readValue(
-                mockMvc.perform(post(CARD_URL)
+                mockMvc.perform(post(CARD_INFOS_URL)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(buildCardRequest(user.getId(), CardInfoTestConstants.UPDATED_CARD_INFO_REQUEST))))
                         .andReturn().getResponse().getContentAsString(),
@@ -199,7 +198,7 @@ public class CardInfoControllerIntegrationTest {
         List<UUID> ids = List.of(card1.getId(), card2.getId());
         String idsParam = ids.stream().map(UUID::toString).collect(Collectors.joining(","));
 
-        String batchJson = mockMvc.perform(get(CARD_URL + "/batch")
+        String batchJson = mockMvc.perform(get(CARD_INFOS_URL + "/batch")
                         .param("ids", idsParam))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();

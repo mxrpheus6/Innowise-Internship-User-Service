@@ -1,5 +1,6 @@
 package com.innowise.userservice.controller;
 
+import static com.innowise.userservice.constants.CommonConstants.USERS_URL;
 import static com.innowise.userservice.constants.UserTestConstants.NAME;
 import static com.innowise.userservice.constants.UserTestConstants.EMAIL;
 import static com.innowise.userservice.constants.UserTestConstants.UPDATED_EMAIL;
@@ -59,13 +60,11 @@ public class UserControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private static final String BASE_URL = "/api/v1/users";
-
     @Test
     void createUser_ThenGetById_ShouldReturnSameUser() throws Exception {
         String requestJson = objectMapper.writeValueAsString(VALID_USER_REQUEST);
 
-        String responseJson = mockMvc.perform(post(BASE_URL)
+        String responseJson = mockMvc.perform(post(USERS_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andExpect(status().isCreated())
@@ -78,7 +77,7 @@ public class UserControllerIntegrationTest {
         assertThat(created.getName()).isEqualTo(NAME);
         assertThat(created.getEmail()).isEqualTo(EMAIL);
 
-        String fetchedJson = mockMvc.perform(get(BASE_URL + "/" + created.getId()))
+        String fetchedJson = mockMvc.perform(get(USERS_URL + "/" + created.getId()))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -93,7 +92,7 @@ public class UserControllerIntegrationTest {
     @Test
     void updateUser_ShouldPersistChanges() throws Exception {
         String createJson = objectMapper.writeValueAsString(VALID_USER_REQUEST);
-        String responseJson = mockMvc.perform(post(BASE_URL)
+        String responseJson = mockMvc.perform(post(USERS_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createJson))
                 .andExpect(status().isCreated())
@@ -104,7 +103,7 @@ public class UserControllerIntegrationTest {
         UserResponse created = objectMapper.readValue(responseJson, UserResponse.class);
 
         String updateJson = objectMapper.writeValueAsString(UPDATED_USER_REQUEST);
-        String updatedJson = mockMvc.perform(put(BASE_URL + "/" + created.getId())
+        String updatedJson = mockMvc.perform(put(USERS_URL + "/" + created.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateJson))
                 .andExpect(status().isOk())
@@ -121,7 +120,7 @@ public class UserControllerIntegrationTest {
     @Test
     void deleteUser_ShouldRemoveUser() throws Exception {
         String createJson = objectMapper.writeValueAsString(VALID_USER_REQUEST);
-        String responseJson = mockMvc.perform(post(BASE_URL)
+        String responseJson = mockMvc.perform(post(USERS_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createJson))
                 .andExpect(status().isCreated())
@@ -131,17 +130,17 @@ public class UserControllerIntegrationTest {
 
         UserResponse created = objectMapper.readValue(responseJson, UserResponse.class);
 
-        mockMvc.perform(delete(BASE_URL + "/" + created.getId()))
+        mockMvc.perform(delete(USERS_URL + "/" + created.getId()))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get(BASE_URL + "/" + created.getId()))
+        mockMvc.perform(get(USERS_URL + "/" + created.getId()))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void getUsersByIds_ShouldReturnRequestedUsers() throws Exception {
         UserResponse user1 = objectMapper.readValue(
-                mockMvc.perform(post(BASE_URL)
+                mockMvc.perform(post(USERS_URL)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(VALID_USER_REQUEST)))
                         .andReturn().getResponse().getContentAsString(),
@@ -149,7 +148,7 @@ public class UserControllerIntegrationTest {
         );
 
         UserResponse user2 = objectMapper.readValue(
-                mockMvc.perform(post(BASE_URL)
+                mockMvc.perform(post(USERS_URL)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(UPDATED_USER_REQUEST)))
                         .andReturn().getResponse().getContentAsString(),
@@ -159,7 +158,7 @@ public class UserControllerIntegrationTest {
         List<UUID> ids = List.of(user1.getId(), user2.getId());
         String idsParam = ids.stream().map(UUID::toString).collect(Collectors.joining(","));
 
-        String batchJson = mockMvc.perform(get(BASE_URL + "/batch")
+        String batchJson = mockMvc.perform(get(USERS_URL + "/batch")
                         .param("ids", idsParam))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
