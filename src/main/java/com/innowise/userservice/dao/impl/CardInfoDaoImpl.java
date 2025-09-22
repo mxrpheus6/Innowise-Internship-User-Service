@@ -19,7 +19,7 @@ public class CardInfoDaoImpl implements CardInfoDao {
     private static final class SQL {
         static final String GET_ALL = "select * from card_info";
         static final String GET_BY_ID = "select * from card_info where id = ?";
-        static final String GET_BY_IDS = "select * from card_info where id in (:ids)";
+        static final String GET_BY_IDS = "select * from card_info where id in (%s)";
 
         static final String CREATE_CARD_INFO = """
             insert into card_info (number, holder, expiration_date, user_id)
