@@ -1,7 +1,23 @@
-name: user-service
 version: '3.8'
 
 services:
+  user-service:
+    build: ..
+    container_name: user_service
+    environment:
+      DB_URL: jdbc:postgresql://users-db:5432/users_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "4000:4000"
+    depends_on:
+      - users-db
+      - redis
+    networks:
+      - user-network
+
   users-db:
     image: postgres:17.5
     container_name: users_db
@@ -13,6 +29,9 @@ services:
       - "5433:5432"
     volumes:
       - users_data:/var/lib/postgresql/data
+    networks:
+      - user-network
+
   redis:
     image: redis:7.4
     container_name: users_redis
@@ -20,7 +39,13 @@ services:
       - "6380:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - user-network
 
 volumes:
   users_data:
   redis_data:
+
+networks:
+  user-network:
+    driver: bridge
