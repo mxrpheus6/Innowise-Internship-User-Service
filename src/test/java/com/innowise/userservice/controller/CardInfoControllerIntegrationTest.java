@@ -46,17 +46,12 @@ public class CardInfoControllerIntegrationTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:17.5");
+    static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:17.5").withReuse(true);
 
     @Container
     @ServiceConnection
     static GenericContainer<?> redisContainer =
-            new GenericContainer<>("redis:7.4").withExposedPorts(6379);
-
-    @DynamicPropertySource
-    static void postgreSqlProperties(DynamicPropertyRegistry registry) {
-        registry.add("postgresql.driver", postgreSQLContainer::getDriverClassName);
-    }
+            new GenericContainer<>("redis:7.4").withExposedPorts(6379).withReuse(true);
 
     @Autowired
     private MockMvc mockMvc;
