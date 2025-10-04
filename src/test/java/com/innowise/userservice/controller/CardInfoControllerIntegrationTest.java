@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 @Testcontainers
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
 public class CardInfoControllerIntegrationTest {
 
