@@ -1,0 +1,14 @@
+server:
+  port: 4000
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/users_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  data:
+    redis:
+      host: redis
+      port: 6380

@@ -1,15 +1,12 @@
 version: '3.8'
+name: user-service
 
 services:
   user-service:
-    build: ..
+    build: .
     container_name: user_service
-    environment:
-      DB_URL: jdbc:postgresql://users-db:5432/users_db
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+    env_file:
+      - .env
     ports:
       - "4000:4000"
     depends_on:

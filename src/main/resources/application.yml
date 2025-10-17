@@ -1,26 +1,12 @@
-server:
-  port: 4000
-
 spring:
   application:
     name: user-service
-
-  datasource:
-    url: ${DB_URL:jdbc:postgresql://users-db:5432/users_db}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-    driver-class-name: ${DB_DRIVER:org.postgresql.Driver}
 
   liquibase:
     change-log: classpath:db/changelog/app-changelog.xml
 
   cache:
     type: redis
-
-  data:
-    redis:
-      host: ${REDIS_HOST:redis}
-      port: ${REDIS_PORT:6379}
 
 logging:
   level:
