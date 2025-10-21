@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,7 +22,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 class AuthTokenFilter extends OncePerRequestFilter {
 
     private final RestTemplate restTemplate;
-    private final String authServiceUrl = "http://host.docker.internal:4001/api/v1/auth/validate";
+
+    @Value("${service.auth.url}")
+    private String authServiceUrl;
+
+    @Value("${service.internal.api-key}")
+    private String internalApiKey;
 
     @Override
     protected void doFilterInternal(
@@ -29,6 +35,19 @@ class AuthTokenFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+
+
+        String uri = request.getRequestURI();
+
+        if (request.getMethod().equals("POST") && uri.equals("/api/v1/users")) {
+            String apiKey = request.getHeader("X-API-KEY");
+            if (apiKey == null || !apiKey.equals(internalApiKey)) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (header == null || !header.startsWith("Bearer ")) {
@@ -42,7 +61,7 @@ class AuthTokenFilter extends OncePerRequestFilter {
             Map<String, String> body = Map.of("token", token);
 
             TokenValidationResponse validationResponse = restTemplate.postForObject(
-                    authServiceUrl,
+                    authServiceUrl + "/api/v1/auth/validate",
                     body,
                     TokenValidationResponse.class
             );
