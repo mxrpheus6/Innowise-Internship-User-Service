@@ -57,6 +57,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     @CachePut(value = "user", key = "#result.id")
     public UserResponse createUser(UserRequest userRequest) {
         User user = userMapper.toEntity(userRequest);
