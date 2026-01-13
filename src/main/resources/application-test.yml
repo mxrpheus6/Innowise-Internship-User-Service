@@ -18,3 +18,8 @@ service:
     api-key: secret
   auth:
     url: http://localhost:4001
+
+management:
+  zipkin:
+    tracing:
+      endpoint: mock
