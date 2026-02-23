@@ -1,6 +1,11 @@
 spring:
   application:
     name: user-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://keycloak:8080/realms/OAuth/protocol/openid-connect/certs}
 
   liquibase:
     change-log: classpath:db/changelog/app-changelog.xml
@@ -10,7 +15,7 @@ spring:
 
 logging:
   level:
-    liquibase: DEBUG
+    org.springframework.security: TRACE
 
 management:
   endpoints:

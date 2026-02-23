@@ -94,7 +94,7 @@ public class CardInfoControllerIntegrationTest {
     void createCardInfo_ThenGetById_ShouldReturnSameCard() throws Exception {
         UserResponse user = createTestUser();
 
-        CardInfoRequest cardRequest = buildCardRequest(user.getId(), CardInfoTestConstants.VALID_CARD_INFO_REQUEST);
+        CardInfoRequest cardRequest = buildCardRequest(UUID.fromString(user.getId()), CardInfoTestConstants.VALID_CARD_INFO_REQUEST);
 
         String responseJson = mockMvc.perform(post(CARD_INFOS_URL)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -124,7 +124,7 @@ public class CardInfoControllerIntegrationTest {
     void updateCardInfo_ShouldPersistChanges() throws Exception {
         UserResponse user = createTestUser();
 
-        CardInfoRequest cardRequest = buildCardRequest(user.getId(), CardInfoTestConstants.VALID_CARD_INFO_REQUEST);
+        CardInfoRequest cardRequest = buildCardRequest(UUID.fromString(user.getId()), CardInfoTestConstants.VALID_CARD_INFO_REQUEST);
 
         CardInfoResponse created = objectMapper.readValue(
                 mockMvc.perform(post(CARD_INFOS_URL)
@@ -135,7 +135,7 @@ public class CardInfoControllerIntegrationTest {
                 CardInfoResponse.class
         );
 
-        CardInfoRequest updatedRequest = buildCardRequest(user.getId(), CardInfoTestConstants.UPDATED_CARD_INFO_REQUEST);
+        CardInfoRequest updatedRequest = buildCardRequest(UUID.fromString(user.getId()), CardInfoTestConstants.UPDATED_CARD_INFO_REQUEST);
 
         CardInfoResponse updated = objectMapper.readValue(
                 mockMvc.perform(put(CARD_INFOS_URL + "/" + created.getId())
@@ -153,7 +153,7 @@ public class CardInfoControllerIntegrationTest {
     void deleteCardInfo_ShouldRemoveCard() throws Exception {
         UserResponse user = createTestUser();
 
-        CardInfoRequest cardRequest = buildCardRequest(user.getId(), CardInfoTestConstants.VALID_CARD_INFO_REQUEST);
+        CardInfoRequest cardRequest = buildCardRequest(UUID.fromString(user.getId()), CardInfoTestConstants.VALID_CARD_INFO_REQUEST);
 
         CardInfoResponse created = objectMapper.readValue(
                 mockMvc.perform(post(CARD_INFOS_URL)
@@ -177,7 +177,7 @@ public class CardInfoControllerIntegrationTest {
         CardInfoResponse card1 = objectMapper.readValue(
                 mockMvc.perform(post(CARD_INFOS_URL)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(buildCardRequest(user.getId(), CardInfoTestConstants.VALID_CARD_INFO_REQUEST))))
+                                .content(objectMapper.writeValueAsString(buildCardRequest(UUID.fromString(user.getId()), CardInfoTestConstants.VALID_CARD_INFO_REQUEST))))
                         .andReturn().getResponse().getContentAsString(),
                 CardInfoResponse.class
         );
@@ -185,7 +185,7 @@ public class CardInfoControllerIntegrationTest {
         CardInfoResponse card2 = objectMapper.readValue(
                 mockMvc.perform(post(CARD_INFOS_URL)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(buildCardRequest(user.getId(), CardInfoTestConstants.UPDATED_CARD_INFO_REQUEST))))
+                                .content(objectMapper.writeValueAsString(buildCardRequest(UUID.fromString(user.getId()), CardInfoTestConstants.UPDATED_CARD_INFO_REQUEST))))
                         .andReturn().getResponse().getContentAsString(),
                 CardInfoResponse.class
         );

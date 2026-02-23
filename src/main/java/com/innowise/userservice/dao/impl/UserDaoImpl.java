@@ -2,7 +2,6 @@ package com.innowise.userservice.dao.impl;
 
 import com.innowise.userservice.dao.UserDao;
 import com.innowise.userservice.model.User;
-import java.sql.Date;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -18,27 +17,28 @@ import org.springframework.stereotype.Repository;
 public class UserDaoImpl implements UserDao {
 
     private static final class SQL {
-        static final String GET_ALL = "select * from users";
-        static final String GET_BY_ID = "select * from users where id = ?";
-        static final String GET_BY_IDS = "select * from users where id in (%s)";
-        static final String GET_BY_EMAIL = "select * from users where email = ?";
+        static final String GET_ALL = "select * from user_entity";
+        static final String GET_BY_ID = "select * from user_entity where id = ?";
+        static final String GET_BY_IDS = "select * from user_entity where id in (%s)";
+        static final String GET_BY_EMAIL = "select * from user_entity where email = ?";
 
+        // Убрал returning id, так как мы генерим ID сами или берем из объекта
         static final String CREATE_USER = """
-            insert into users (name, surname, birth_date, email)
-            values (?, ?, ?, ?)
-            returning id
+            insert into user_entity (id, first_name, last_name, email, username, realm_id, created_timestamp, enabled, email_verified)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
         static final String UPDATE_USER = """
-            update users
-            set name = ?,
-                surname = ?,
-                birth_date = ?,
-                email = ?
+            update user_entity
+            set first_name = ?,
+                last_name = ?,
+                email = ?,
+                username = ?,
+                enabled = ?
             where id = ?
             """;
 
-        static final String DELETE_USER = "delete from users where id = ?";
+        static final String DELETE_USER = "delete from user_entity where id = ?";
     }
 
     private final JdbcTemplate jdbcTemplate;
@@ -49,24 +49,21 @@ public class UserDaoImpl implements UserDao {
     }
 
     @Override
-    public Optional<User> getUserById(UUID id) {
-        User user = null;
-
+    public Optional<User> getUserById(String id) {
         try {
-            user = jdbcTemplate.queryForObject(SQL.GET_BY_ID, ROW_MAPPER, id);
+            // Теперь id — это String, передаем напрямую
+            User user = jdbcTemplate.queryForObject(SQL.GET_BY_ID, ROW_MAPPER, id);
+            return Optional.ofNullable(user);
         } catch (DataAccessException e) {
             return Optional.empty();
         }
-
-        return Optional.ofNullable(user);
     }
 
     @Override
-    public List<User> getUsersByIds(List<UUID> ids) {
+    public List<User> getUsersByIds(List<String> ids) {
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }
-
         String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
         String sql = String.format(SQL.GET_BY_IDS, placeholders);
 
@@ -75,41 +72,48 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public Optional<User> getUserByEmail(String email) {
-        User user = null;
-
         try {
-            user = jdbcTemplate.queryForObject(SQL.GET_BY_EMAIL, ROW_MAPPER, email);
+            User user = jdbcTemplate.queryForObject(SQL.GET_BY_EMAIL, ROW_MAPPER, email);
+            return Optional.ofNullable(user);
         } catch (DataAccessException e) {
             return Optional.empty();
         }
-
-        return Optional.ofNullable(user);
     }
 
     @Override
     public User createUser(User user) {
-        UUID id = jdbcTemplate.queryForObject(
+        String newId = (user.getId() != null) ? user.getId() : UUID.randomUUID().toString();
+        long timestamp = System.currentTimeMillis();
+
+        String realmId = (user.getRealmId() != null) ? user.getRealmId() : "OAuth";
+
+        jdbcTemplate.update(
                 SQL.CREATE_USER,
-                UUID.class,
-                user.getName(),
-                user.getSurname(),
-                Date.valueOf(user.getBirthDate()),
-                user.getEmail()
+                newId,
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getUsername(),
+                realmId,
+                timestamp,
+                true,
+                false
         );
 
-        user.setId(id);
+        user.setId(newId);
         return user;
     }
 
     @Override
-    public User updateUserById(UUID id, User user) {
+    public User updateUserById(String id, User user) {
         int updatedRows = jdbcTemplate.update(
                 SQL.UPDATE_USER,
-                user.getName(),
-                user.getSurname(),
-                user.getBirthDate(),
+                user.getFirstName(),
+                user.getLastName(),
                 user.getEmail(),
-                id
+                user.getUsername(),
+                user.isEnabled(),
+                id // String
         );
 
         if (updatedRows == 0) {
@@ -121,7 +125,7 @@ public class UserDaoImpl implements UserDao {
     }
 
     @Override
-    public void deleteUserById(UUID id) {
+    public void deleteUserById(String id) {
         jdbcTemplate.update(SQL.DELETE_USER, id);
     }
 }

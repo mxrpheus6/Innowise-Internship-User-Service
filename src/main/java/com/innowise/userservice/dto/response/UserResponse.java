@@ -1,7 +1,5 @@
 package com.innowise.userservice.dto.response;
 
-import java.time.LocalDate;
-import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,9 +10,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserResponse {
-    private UUID id;
-    private String name;
-    private String surname;
-    private LocalDate birthDate;
+    private String id;
+    private String firstName;
+    private String lastName;
     private String email;
 }
