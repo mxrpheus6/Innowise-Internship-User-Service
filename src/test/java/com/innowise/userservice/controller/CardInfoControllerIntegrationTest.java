@@ -75,11 +75,8 @@ public class CardInfoControllerIntegrationTest {
     private UserResponse createTestUser() throws Exception {
         String mockUserId = UUID.randomUUID().toString();
 
-        // 1. Ручками сохраняем юзера в тестовую БД для обхода Foreign Key
-        // Добавил email на всякий случай, если в таблице есть ограничение NOT NULL
         jdbcTemplate.update("INSERT INTO users (id, email) VALUES (?, ?)", UUID.fromString(mockUserId), EMAIL);
 
-        // 2. Настраиваем мок-ответ для контроллера
         String mockUserJson = String.format("{\"id\":\"%s\", \"firstName\":\"%s\", \"email\":\"%s\"}", mockUserId, NAME, EMAIL);
         UserResponse mockResponse = objectMapper.readValue(mockUserJson, UserResponse.class);
         when(userService.createUser(any(UserRequest.class))).thenReturn(mockResponse);
@@ -93,7 +90,6 @@ public class CardInfoControllerIntegrationTest {
 
         String userJson = objectMapper.writeValueAsString(userRequest);
 
-        // 3. Дергаем контроллер
         String responseJson = mockMvc.perform(post(USERS_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(userJson))
