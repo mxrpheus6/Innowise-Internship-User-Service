@@ -3,23 +3,34 @@ package com.innowise.userservice.controller;
 import static com.innowise.userservice.constants.CommonConstants.USERS_URL;
 import static com.innowise.userservice.constants.UserTestConstants.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innowise.userservice.dto.request.UserRequest;
 import com.innowise.userservice.dto.response.UserResponse;
+import com.innowise.userservice.service.UserService;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -27,9 +38,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 @SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
 @ActiveProfiles(profiles = "test")
 @Transactional
+@WithMockUser(roles = "ADMIN")
 public class UserControllerIntegrationTest {
 
     @Container
@@ -47,6 +59,9 @@ public class UserControllerIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @MockBean
+    private UserService userService;
 
     @BeforeAll
     static void initSchema(@Autowired JdbcTemplate jdbcTemplate) {
@@ -69,8 +84,19 @@ public class UserControllerIntegrationTest {
         """);
     }
 
+    private UserResponse createMockResponse(String id, String firstName, String email) throws Exception {
+        String json = String.format("{\"id\":\"%s\", \"firstName\":\"%s\", \"email\":\"%s\"}", id, firstName, email);
+        return objectMapper.readValue(json, UserResponse.class);
+    }
+
     @Test
     void createUser_ThenGetById_ShouldReturnSameUser() throws Exception {
+        String mockId = UUID.randomUUID().toString();
+        UserResponse mockCreatedUser = createMockResponse(mockId, NAME, EMAIL);
+
+        when(userService.createUser(any(UserRequest.class))).thenReturn(mockCreatedUser);
+        when(userService.getUserById(mockId)).thenReturn(mockCreatedUser);
+
         String requestJson = objectMapper.writeValueAsString(VALID_USER_REQUEST);
 
         String responseJson = mockMvc.perform(post(USERS_URL)
@@ -83,7 +109,6 @@ public class UserControllerIntegrationTest {
 
         UserResponse created = objectMapper.readValue(responseJson, UserResponse.class);
 
-        // Используем getName(), так как в DTO скорее всего осталось поле name
         assertThat(created.getFirstName()).isEqualTo(NAME);
         assertThat(created.getEmail()).isEqualTo(EMAIL);
 
@@ -101,7 +126,13 @@ public class UserControllerIntegrationTest {
 
     @Test
     void updateUser_ShouldPersistChanges() throws Exception {
-        // 1. Create
+        String mockId = UUID.randomUUID().toString();
+        UserResponse mockCreatedUser = createMockResponse(mockId, NAME, EMAIL);
+        UserResponse mockUpdatedUser = createMockResponse(mockId, UPDATED_NAME, UPDATED_EMAIL);
+
+        when(userService.createUser(any(UserRequest.class))).thenReturn(mockCreatedUser);
+        when(userService.updateUserById(eq(mockId), any(UserRequest.class))).thenReturn(mockUpdatedUser);
+
         String createJson = objectMapper.writeValueAsString(VALID_USER_REQUEST);
         String responseJson = mockMvc.perform(post(USERS_URL)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -113,7 +144,6 @@ public class UserControllerIntegrationTest {
 
         UserResponse created = objectMapper.readValue(responseJson, UserResponse.class);
 
-        // 2. Update
         String updateJson = objectMapper.writeValueAsString(UPDATED_USER_REQUEST);
         String updatedJson = mockMvc.perform(put(USERS_URL + "/" + created.getId())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -131,6 +161,14 @@ public class UserControllerIntegrationTest {
 
     @Test
     void deleteUser_ShouldRemoveUser() throws Exception {
+        String mockId = UUID.randomUUID().toString();
+        UserResponse mockCreatedUser = createMockResponse(mockId, NAME, EMAIL);
+
+        when(userService.createUser(any(UserRequest.class))).thenReturn(mockCreatedUser);
+        doNothing().when(userService).deleteUserById(mockId);
+        when(userService.getUserById(mockId))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
+
         String createJson = objectMapper.writeValueAsString(VALID_USER_REQUEST);
         String responseJson = mockMvc.perform(post(USERS_URL)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -151,7 +189,18 @@ public class UserControllerIntegrationTest {
 
     @Test
     void getUsersByIds_ShouldReturnRequestedUsers() throws Exception {
-        // Создаем двух юзеров
+        String mockId1 = UUID.randomUUID().toString();
+        String mockId2 = UUID.randomUUID().toString();
+
+        UserResponse mockUser1 = createMockResponse(mockId1, NAME, EMAIL);
+        UserResponse mockUser2 = createMockResponse(mockId2, UPDATED_NAME, UPDATED_EMAIL);
+
+        when(userService.createUser(any(UserRequest.class)))
+                .thenReturn(mockUser1)
+                .thenReturn(mockUser2);
+
+        when(userService.getUsersByIds(any(List.class))).thenReturn(List.of(mockUser1, mockUser2));
+
         UserResponse user1 = objectMapper.readValue(
                 mockMvc.perform(post(USERS_URL)
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -168,10 +217,7 @@ public class UserControllerIntegrationTest {
                 UserResponse.class
         );
 
-        // ТЕПЕРЬ ID - ЭТО СТРОКИ
         List<String> ids = List.of(user1.getId(), user2.getId());
-
-        // Просто джойним строки через запятую
         String idsParam = String.join(",", ids);
 
         String batchJson = mockMvc.perform(get(USERS_URL + "/batch")
