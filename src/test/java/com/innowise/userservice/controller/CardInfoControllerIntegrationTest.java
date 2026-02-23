@@ -7,6 +7,8 @@ import static com.innowise.userservice.constants.UserTestConstants.EMAIL;
 import static com.innowise.userservice.constants.UserTestConstants.SURNAME;
 import static com.innowise.userservice.constants.UserTestConstants.NAME;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -19,12 +21,16 @@ import com.innowise.userservice.dto.request.CardInfoRequest;
 import com.innowise.userservice.dto.request.UserRequest;
 import com.innowise.userservice.dto.response.CardInfoResponse;
 import com.innowise.userservice.dto.response.UserResponse;
+import com.innowise.userservice.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,9 +45,10 @@ import java.util.stream.Collectors;
 
 @Testcontainers
 @SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
 @ActiveProfiles(profiles = "test")
 @Transactional
+@WithMockUser(roles = "ADMIN")
 public class CardInfoControllerIntegrationTest {
 
     @Container
@@ -59,7 +66,24 @@ public class CardInfoControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @MockBean
+    private UserService userService;
+
     private UserResponse createTestUser() throws Exception {
+        String mockUserId = UUID.randomUUID().toString();
+
+        // 1. Ручками сохраняем юзера в тестовую БД для обхода Foreign Key
+        // Добавил email на всякий случай, если в таблице есть ограничение NOT NULL
+        jdbcTemplate.update("INSERT INTO users (id, email) VALUES (?, ?)", UUID.fromString(mockUserId), EMAIL);
+
+        // 2. Настраиваем мок-ответ для контроллера
+        String mockUserJson = String.format("{\"id\":\"%s\", \"firstName\":\"%s\", \"email\":\"%s\"}", mockUserId, NAME, EMAIL);
+        UserResponse mockResponse = objectMapper.readValue(mockUserJson, UserResponse.class);
+        when(userService.createUser(any(UserRequest.class))).thenReturn(mockResponse);
+
         UserRequest userRequest = new UserRequest(
                 NAME,
                 SURNAME,
@@ -67,9 +91,9 @@ public class CardInfoControllerIntegrationTest {
                 EMAIL
         );
 
-
         String userJson = objectMapper.writeValueAsString(userRequest);
 
+        // 3. Дергаем контроллер
         String responseJson = mockMvc.perform(post(USERS_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(userJson))
