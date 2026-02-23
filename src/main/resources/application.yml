@@ -1,6 +1,11 @@
 spring:
   application:
     name: user-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://keycloak:8080/realms/OAuth/protocol/openid-connect/certs}
 
   liquibase:
     change-log: classpath:db/changelog/app-changelog.xml
@@ -10,19 +15,23 @@ spring:
 
 logging:
   level:
-    liquibase: DEBUG
+    org.springframework.security: TRACE
 
 management:
   endpoints:
     web:
       exposure:
-        include: "health,info"
-  endpoint:
-    health:
-      probes:
-        enabled: true
+        include: "prometheus,health,info,metrics"
+
   health:
     livenessState:
       enabled: true
     readinessState:
       enabled: true
+
+  zipkin:
+    tracing:
+      endpoint: ${TEMPO_ZIPKIN}/api/v2/spans
+  tracing:
+    sampling:
+      probability: 1.0

@@ -1,14 +1,10 @@
 package com.innowise.userservice.service.impl;
 
-import static com.innowise.userservice.constants.UserTestConstants.EMAIL;
-import static com.innowise.userservice.constants.UserTestConstants.UPDATED_USER_REQUEST;
-import static com.innowise.userservice.constants.UserTestConstants.UPDATED_USER_RESPONSE;
-import static com.innowise.userservice.constants.UserTestConstants.USER;
-import static com.innowise.userservice.constants.UserTestConstants.USER_ID;
-import static com.innowise.userservice.constants.UserTestConstants.USER_RESPONSE;
-import static com.innowise.userservice.constants.UserTestConstants.VALID_USER_REQUEST;
+import static com.innowise.userservice.constants.UserTestConstants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,6 +12,7 @@ import com.innowise.userservice.dao.UserDao;
 import com.innowise.userservice.dto.response.UserResponse;
 import com.innowise.userservice.exception.UserNotFoundException;
 import com.innowise.userservice.mapper.UserMapper;
+import com.innowise.userservice.model.User;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -83,7 +80,9 @@ public class UserServiceImplTest {
 
     @Test
     void getUsersByIds_ShouldReturnMappedResponses() {
-        List<java.util.UUID> ids = List.of(USER_ID);
+        // ТЕПЕРЬ ЭТО LIST<STRING>
+        List<String> ids = List.of(USER_ID);
+
         when(userDao.getUsersByIds(ids)).thenReturn(List.of(USER));
         when(userMapper.toResponse(USER)).thenReturn(USER_RESPONSE);
 
@@ -96,25 +95,29 @@ public class UserServiceImplTest {
     @Test
     void createUser_ShouldPersistAndReturnResponse() {
         when(userMapper.toEntity(VALID_USER_REQUEST)).thenReturn(USER);
-        when(userDao.createUser(USER)).thenReturn(USER);
+
+        when(userDao.createUser(any(User.class))).thenReturn(USER);
+
         when(userMapper.toResponse(USER)).thenReturn(USER_RESPONSE);
 
         UserResponse result = userService.createUser(VALID_USER_REQUEST);
 
         assertEquals(USER_RESPONSE, result);
-        verify(userDao).createUser(USER);
+        verify(userDao).createUser(any(User.class));
     }
 
     @Test
     void updateUserById_ShouldUpdateAndReturnResponse() {
         when(userMapper.toEntity(UPDATED_USER_REQUEST)).thenReturn(USER);
-        when(userDao.updateUserById(USER_ID, USER)).thenReturn(USER);
+
+        when(userDao.updateUserById(eq(USER_ID), any(User.class))).thenReturn(USER);
+
         when(userMapper.toResponse(USER)).thenReturn(UPDATED_USER_RESPONSE);
 
         UserResponse result = userService.updateUserById(USER_ID, UPDATED_USER_REQUEST);
 
         assertEquals(UPDATED_USER_RESPONSE, result);
-        verify(userDao).updateUserById(USER_ID, USER);
+        verify(userDao).updateUserById(eq(USER_ID), any(User.class));
     }
 
     @Test
